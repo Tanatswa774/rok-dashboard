@@ -11,16 +11,19 @@ function App() {
 
   const fetchStatus = async () => {
     try {
+      console.log("Fetching status...");
       const res = await fetch(`${API_URL}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: "tanatswa" }),
       });
+      console.log("Status response status:", res.status);
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`HTTP ${res.status}: ${text}`);
       }
       const data = await res.json();
+      console.log("Status data:", data);
       setIsRunning(data.running);
     } catch (err) {
       console.error("Status error", err);
@@ -29,16 +32,19 @@ function App() {
 
   const fetchGems = async () => {
     try {
+      console.log("Fetching gems...");
       const res = await fetch(`${API_URL}/gems`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: "tanatswa" }),
       });
+      console.log("Gems response status:", res.status);
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`HTTP ${res.status}: ${text}`);
       }
       const data = await res.json();
+      console.log("Gems data:", data);
       setGemsFound(data.gems_found || 0);
       setLastUpdated(
         data.last_updated ? new Date(data.last_updated * 1000).toLocaleString() : null
@@ -48,24 +54,27 @@ function App() {
     }
   };
 
-  const fetchScreenshot = async () => {
-    // Just update URL to force refresh
-    setScreenshotUrl(`${API_URL}/screenshot?${Date.now()}`);
+  const fetchScreenshot = () => {
+    const url = `${API_URL}/screenshot?${Date.now()}`;
+    console.log("Updating screenshot URL:", url);
+    setScreenshotUrl(url);
   };
 
   const startBot = async () => {
+    console.log("Start button clicked");
     try {
       const res = await fetch(`${API_URL}/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: "tanatswa" }),
       });
+      console.log("Start response status:", res.status);
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`HTTP ${res.status}: ${text}`);
       }
       const data = await res.json();
-      console.log(data);
+      console.log("StartBot response data:", data);
       fetchStatus();
     } catch (err) {
       console.error("Start error", err);
@@ -73,18 +82,20 @@ function App() {
   };
 
   const stopBot = async () => {
+    console.log("Stop button clicked");
     try {
       const res = await fetch(`${API_URL}/stop`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: "tanatswa" }),
       });
+      console.log("Stop response status:", res.status);
       if (!res.ok) {
         const text = await res.text();
         throw new Error(`HTTP ${res.status}: ${text}`);
       }
       const data = await res.json();
-      console.log(data);
+      console.log("StopBot response data:", data);
       fetchStatus();
     } catch (err) {
       console.error("Stop error", err);
