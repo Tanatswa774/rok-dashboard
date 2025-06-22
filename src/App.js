@@ -1,102 +1,116 @@
 import React, { useState, useEffect } from "react";
+import "./App.css";
+
+const API_URL = "https://flask-backend-82sx.onrender.com"; // 🔁 Replace with your Flask backend URL
 
 function App() {
-  const username = "tanatswa"; // hardcoded user
-  const [botRunning, setBotRunning] = useState(false);
-  const [gems, setGems] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [gemsFound, setGemsFound] = useState(0);
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [error, setError] = useState(null);
+  const [screenshotUrl, setScreenshotUrl] = useState("");
 
-  const checkStatus = async () => {
+  const fetchStatus = async () => {
     try {
-      const res = await fetch("http://localhost:5000/status", {
+      const res = await fetch(`${API_URL}/status`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: "default" }),
       });
       const data = await res.json();
-      setBotRunning(data.running);
+      setIsRunning(data.running);
     } catch (err) {
-      setError("Failed to check bot status");
+      console.error("Status error", err);
     }
   };
 
   const fetchGems = async () => {
     try {
-      const res = await fetch("http://localhost:5000/gems", {
+      const res = await fetch(`${API_URL}/gems`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: "default" }),
       });
       const data = await res.json();
-      setGems(data.gems_found || 0);
-      setLastUpdated(data.last_updated
-        ? new Date(data.last_updated * 1000).toLocaleTimeString()
-        : "N/A");
+      setGemsFound(data.gems_found || 0);
+      setLastUpdated(data.last_updated ? new Date(data.last_updated * 1000).toLocaleString() : null);
     } catch (err) {
-      setError("Failed to load gem count");
+      console.error("Gem fetch error", err);
     }
+  };
+
+  const fetchScreenshot = async () => {
+    setScreenshotUrl(`${API_URL}/screenshot?${Date.now()}`);
   };
 
   const startBot = async () => {
     try {
-      const res = await fetch("http://localhost:5000/start", {
+      const res = await fetch(`${API_URL}/start`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: "default" }),
       });
       const data = await res.json();
-      if (data.status === "started") {
-        setBotRunning(true);
-      } else {
-        setError(data.message || "Error starting bot");
-      }
+      console.log(data);
+      fetchStatus();
     } catch (err) {
-      setError("Failed to start bot");
+      console.error("Start error", err);
     }
   };
 
   const stopBot = async () => {
     try {
-      const res = await fetch("http://localhost:5000/stop", {
+      const res = await fetch(`${API_URL}/stop`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username }),
+        body: JSON.stringify({ username: "default" }),
       });
       const data = await res.json();
-      if (data.status === "stopped") {
-        setBotRunning(false);
-      } else {
-        setError(data.message || "Error stopping bot");
-      }
+      console.log(data);
+      fetchStatus();
     } catch (err) {
-      setError("Failed to stop bot");
+      console.error("Stop error", err);
     }
   };
 
   useEffect(() => {
-    checkStatus();
+    fetchStatus();
     fetchGems();
-    const interval = setInterval(fetchGems, 5000);
+    fetchScreenshot();
+    const interval = setInterval(() => {
+      fetchStatus();
+      fetchGems();
+      fetchScreenshot();
+    }, 10000); // refresh every 10s
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <h2>Rise of Kingdoms Bot Dashboard</h2>
+    <div className="App">
+      <h1>Rise of Kingdoms Bot Dashboard</h1>
 
-      <p>Status: {botRunning ? "🟢 Running" : "🔴 Stopped"}</p>
-      <p>Gems Found: {gems}</p>
-      <p>Last Updated: {lastUpdated}</p>
+      <div style={{ marginBottom: 20 }}>
+        <button onClick={startBot} disabled={isRunning}>
+          ▶️ Start Bot
+        </button>
+        <button onClick={stopBot} disabled={!isRunning}>
+          ⏹️ Stop Bot
+        </button>
+      </div>
 
-      <button onClick={startBot} disabled={botRunning}>
-        Start Bot
-      </button>
-      <button onClick={stopBot} disabled={!botRunning} style={{ marginLeft: "10px" }}>
-        Stop Bot
-      </button>
+      <div>
+        <p>🔄 Bot status: <strong>{isRunning ? "Running" : "Stopped"}</strong></p>
+        <p>💎 Gems Found: <strong>{gemsFound}</strong></p>
+        {lastUpdated && <p>🕒 Last Updated: {lastUpdated}</p>}
+      </div>
 
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <div style={{ marginTop: 20 }}>
+        <h3>📸 Latest Screenshot</h3>
+        <img
+          src={screenshotUrl}
+          alt="Latest"
+          style={{ width: "70%", border: "1px solid #ccc" }}
+        />
+      </div>
     </div>
   );
 }
